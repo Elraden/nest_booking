@@ -9,7 +9,7 @@ export class Room {
 	@Prop({ required: true, unique: true })
 	roomNumber: number;
 
-	@Prop({ required: true, enum: RoomType })
+	@Prop({ required: true, enum: Object.values(RoomType) })
 	type: RoomType;
 
 	@Prop({ default: false })

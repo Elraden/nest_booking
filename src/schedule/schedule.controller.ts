@@ -34,7 +34,7 @@ export class ScheduleController {
 		return this.scheduleService.findById(id);
 	}
 
-	@Delete('delete/:id')
+	@Delete(':id')
 	delete(@Param('id') id: string) {
 		return this.scheduleService.delete(id);
 	}
