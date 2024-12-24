@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomService } from './room.service';
+import { ROOM_NOT_FOUND_ERROR } from './room.constants';
 
 @Controller('room')
 export class RoomController {
@@ -19,7 +20,11 @@ export class RoomController {
 
 	@Get(':id')
 	findById(@Param('id') id: string) {
-		return this.roomService.findById(id);
+		const room = this.roomService.findById(id);
+		if (!room) {
+			throw new HttpException(ROOM_NOT_FOUND_ERROR, HttpStatus.NOT_FOUND);
+		}
+		return room;
 	}
 
 	@Patch('update/:id')

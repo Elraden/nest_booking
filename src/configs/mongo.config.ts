@@ -1,7 +1,13 @@
 import { ConfigService } from '@nestjs/config';
 
 export const getMongoConfig = (configService: ConfigService) => {
+	const login = configService.get<string>('MONGO_LOGIN');
+	const password = configService.get<string>('MONGO_PASSWORD');
+	const host = configService.get<string>('MONGO_HOST');
+	const port = configService.get<string>('MONGO_PORT');
+	const dbName = configService.get<string>('MONGO_DB');
+	const authSource = configService.get<string>('MONGO_AUTH_SOURCE');
 	return {
-		uri: `mongodb://${configService.get<string>('MONGO_LOGIN')}:${configService.get<string>('MONGO_PASSWORD')}@${configService.get<string>('MONGO_HOST')}:${configService.get<string>('MONGO_PORT')}/${configService.get<string>('MONGO_DB')}?authSource=${configService.get<string>('MONGO_AUTH_SOURCE')}`,
+		uri: `mongodb://${login}:${password}@${host}:${port}/${dbName}?authSource=${authSource}`,
 	};
 };
