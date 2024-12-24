@@ -28,8 +28,12 @@ export class RoomController {
 	}
 
 	@Patch('update/:id')
-	update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-		return this.roomService.update(id, updateRoomDto);
+	async update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
+		const updatedRoom = await this.roomService.update(id, updateRoomDto);
+		if (!updatedRoom) {
+			throw new HttpException(ROOM_NOT_FOUND_ERROR, HttpStatus.NOT_FOUND);
+		}
+		return updatedRoom;
 	}
 
 	@Delete(':id')

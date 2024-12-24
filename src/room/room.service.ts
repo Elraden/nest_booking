@@ -26,7 +26,7 @@ export class RoomService {
 		return this.roomModel.findById(id).exec();
 	}
 
-	update(id: string, updateRoomDto: UpdateRoomDto) {
+	update(id: string, updateRoomDto: UpdateRoomDto): Promise<Room | null> {
 		return this.roomModel.findByIdAndUpdate(id, updateRoomDto, { new: true }).exec();
 	}
 
