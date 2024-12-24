@@ -1,15 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Room, RoomDocument } from './models/room.model';
 import { Model } from 'mongoose';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { ROOM_ALREADY_EXISTS_ERROR } from './room.constants';
 
 @Injectable()
 export class RoomService {
 	constructor(@InjectModel(Room.name) private readonly roomModel: Model<RoomDocument>) {}
 
-	create(createRoomDto: CreateRoomDto): Promise<Room> {
+	async create(createRoomDto: CreateRoomDto): Promise<Room> {
+		const existingRoom = await this.roomModel.findOne({ roomNumber: createRoomDto.roomNumber });
+		if (existingRoom) {
+			throw new HttpException(ROOM_ALREADY_EXISTS_ERROR, HttpStatus.BAD_REQUEST);
+		}
 		return this.roomModel.create(createRoomDto);
 	}
 
