@@ -14,7 +14,7 @@ const testRoomDto: CreateRoomDto = {
 	seaView: true,
 };
 
-describe('AppModule (e2e)', () => {
+describe('Room Controller (e2e)', () => {
 	let app: INestApplication;
 	let createdId: string;
 
