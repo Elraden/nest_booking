@@ -5,7 +5,17 @@ import { AppModule } from '../src/app.module';
 import { disconnect, Types } from 'mongoose';
 import { CreateRoomDto } from '../src/room/dto/create-room.dto';
 import { RoomType } from '../src/room/types/RoomTypeEnum';
-import { ROOM_ALREADY_EXISTS_ERROR, ROOM_NOT_FOUND_ERROR } from '../src/room/room.constants';
+import {
+	ROOM_ALREADY_EXISTS_ERROR,
+	ROOM_NOT_FOUND_ERROR,
+	ROOM_NUMBER_MUST_BE_INT,
+	ROOM_NUMBER_POSITIVE,
+	ROOM_NUMBER_REQUIRED,
+	SEAVIEW_BOOLEAN,
+	SEAVIEW_REQUIRED,
+	TYPE_INVALID,
+	TYPE_REQUIRED,
+} from '../src/room/room.constants';
 
 const invalidId = new Types.ObjectId().toHexString();
 const testRoomDto: CreateRoomDto = {
@@ -47,6 +57,78 @@ describe('Room Controller (e2e)', () => {
 			.send(testRoomDto)
 			.expect(400);
 		expect(response.body.message).toBe(ROOM_ALREADY_EXISTS_ERROR);
+	});
+
+	it('/room/create (POST) - fail: roomNumber is string', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, roomNumber: 'string' })
+			.expect(400);
+
+		expect(response.body.message).toContain(ROOM_NUMBER_MUST_BE_INT);
+	});
+
+	it('/room/create (POST) - fail: roomNumber as negative number', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, roomNumber: -1 })
+			.expect(400);
+
+		expect(response.body.message).toContain(ROOM_NUMBER_POSITIVE);
+	});
+
+	it('/room/create (POST) - fail: roomNumber as zero', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, roomNumber: 0 })
+			.expect(400);
+
+		expect(response.body.message).toContain(ROOM_NUMBER_POSITIVE);
+	});
+
+	it('/room/create (POST) - fail: roomNumber is empty', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, roomNumber: undefined })
+			.expect(400);
+
+		expect(response.body.message).toContain(ROOM_NUMBER_REQUIRED);
+	});
+
+	it('/room/create (POST) - fail: type as invalid enum value', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, type: 'INVALID_TYPE' })
+			.expect(400);
+
+		expect(response.body.message).toContain(TYPE_INVALID);
+	});
+
+	it('/room/create (POST) - fail: type is empty', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, type: undefined })
+			.expect(400);
+
+		expect(response.body.message).toContain(TYPE_REQUIRED);
+	});
+
+	it('/room/create (POST) - fail: seaView as string', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, seaView: 'true' })
+			.expect(400);
+
+		expect(response.body.message).toContain(SEAVIEW_BOOLEAN);
+	});
+
+	it('/room/create (POST) - fail: seaView is empty', async () => {
+		const response = await request(app.getHttpServer())
+			.post('/room/create')
+			.send({ ...testRoomDto, seaView: undefined })
+			.expect(400);
+
+		expect(response.body.message).toContain(SEAVIEW_REQUIRED);
 	});
 
 	it('/room/all (GET) - success', async () => {

@@ -7,7 +7,11 @@ import { CreateScheduleDto } from 'src/schedule/dto/create-schedule.dto';
 import { CreateRoomDto } from 'src/room/dto/create-room.dto';
 import { RoomType } from 'src/room/types/RoomTypeEnum';
 import {
+	DATE_INVALID,
+	DATE_REQUIRED,
 	ROOM_ALREADY_BOOKED_ERROR,
+	ROOM_ID_INVALID,
+	ROOM_ID_REQUIRED,
 	ROOM_NOT_EXISTS_ERROR,
 	SCHEDULE_NOT_FOUND_ERROR,
 } from 'src/schedule/schedule.constants';
@@ -48,10 +52,32 @@ describe('Schedule Controller (e2e)', () => {
 			.send(testRoomDto)
 			.expect(201);
 		createdRoomId = response.body._id;
-		await new Promise((resolve) => setTimeout(resolve, 500));
+
+		// Комната не сразу становится доступна, добавлена проверка на наличие комнаты
+		let retries = 5;
+		while (retries > 0) {
+			const exists = await app.get('RoomModel').exists({ _id: createdRoomId });
+			if (exists) break;
+			retries--;
+			await new Promise((resolve) => setTimeout(resolve, 200));
+		}
 	});
 
-	it('/schedule/create (POST) - room not found', async () => {
+	it('/schedule/create (POST) - success', async () => {
+		const scheduleDto = { ...testScheduleDto, roomId: createdRoomId };
+
+		const response = await request(app.getHttpServer()).post('/schedule/create').send(scheduleDto);
+
+		expect(response.status).toBe(201);
+		expect(response.body._id).toBeDefined();
+		expect(response.body.roomId).toBe(createdRoomId);
+
+		const expectedDate = new Date(scheduleDto.date);
+		expectedDate.setUTCHours(0, 0, 0, 0);
+		expect(response.body.date).toBe(expectedDate.toISOString());
+	});
+
+	it('/schedule/create (POST) - fail: room not found', async () => {
 		const scheduleDto = { ...testScheduleDto, roomId: invalidRoomId };
 		const response = await request(app.getHttpServer())
 			.post('/schedule/create')
@@ -61,7 +87,7 @@ describe('Schedule Controller (e2e)', () => {
 		expect(response.body.message).toBe(ROOM_NOT_EXISTS_ERROR);
 	});
 
-	it('/schedule/create (POST) - room already booked', async () => {
+	it('/schedule/create (POST) - fail: room already booked', async () => {
 		const scheduleDto = { ...testScheduleDto, roomId: createdRoomId };
 		await request(app.getHttpServer()).post('/schedule/create').send(scheduleDto).expect(201);
 
@@ -71,6 +97,46 @@ describe('Schedule Controller (e2e)', () => {
 			.expect(400);
 
 		expect(response.body.message).toBe(ROOM_ALREADY_BOOKED_ERROR);
+	});
+
+	it('/schedule/create (POST) - fail: roomId is not a valid ObjectId', async () => {
+		const scheduleDto = { ...testScheduleDto, roomId: 'invalidRoomId' };
+		const response = await request(app.getHttpServer())
+			.post('/schedule/create')
+			.send(scheduleDto)
+			.expect(400);
+
+		expect(response.body.message).toContain(ROOM_ID_INVALID);
+	});
+
+	it('/schedule/create (POST) - fail: roomId is empty', async () => {
+		const scheduleDto = { ...testScheduleDto, roomId: undefined };
+		const response = await request(app.getHttpServer())
+			.post('/schedule/create')
+			.send(scheduleDto)
+			.expect(400);
+
+		expect(response.body.message).toContain(ROOM_ID_REQUIRED);
+	});
+
+	it('/schedule/create (POST) - fail: date is not in ISO format', async () => {
+		const scheduleDto = { ...testScheduleDto, roomId: createdRoomId, date: 'invalid-date' };
+		const response = await request(app.getHttpServer())
+			.post('/schedule/create')
+			.send(scheduleDto)
+			.expect(400);
+
+		expect(response.body.message).toContain(DATE_INVALID);
+	});
+
+	it('/schedule/create (POST) - fail: date is empty', async () => {
+		const scheduleDto = { ...testScheduleDto, roomId: createdRoomId, date: undefined };
+		const response = await request(app.getHttpServer())
+			.post('/schedule/create')
+			.send(scheduleDto)
+			.expect(400);
+
+		expect(response.body.message).toContain(DATE_REQUIRED);
 	});
 
 	it('/schedule/:id (GET) - success', async () => {
@@ -138,7 +204,7 @@ describe('Schedule Controller (e2e)', () => {
 		expect(checkResponse.body.message).toBe(SCHEDULE_NOT_FOUND_ERROR);
 	});
 
-	it('/schedule/:id (DELETE) - not found', async () => {
+	it('/schedule/:id (DELETE) - fail: not found', async () => {
 		const response = await request(app.getHttpServer())
 			.delete(`/schedule/${invalidScheduleId}`)
 			.expect(404);

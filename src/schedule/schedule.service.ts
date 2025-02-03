@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Schedule, ScheduleDocument } from './models/schedule.model';
 import { Model } from 'mongoose';
@@ -22,7 +22,7 @@ export class ScheduleService {
 
 		const roomExists = await this.roomModel.exists({ _id: roomId });
 		if (!roomExists) {
-			throw new HttpException(ROOM_NOT_EXISTS_ERROR, HttpStatus.BAD_REQUEST);
+			throw new BadRequestException(ROOM_NOT_EXISTS_ERROR);
 		}
 
 		const bookingDate = new Date(date);
@@ -34,7 +34,7 @@ export class ScheduleService {
 		});
 
 		if (existingBooking) {
-			throw new Error(ROOM_ALREADY_BOOKED_ERROR);
+			throw new BadRequestException(ROOM_ALREADY_BOOKED_ERROR);
 		}
 		return this.scheduleModel.create({ ...createScheduleDto, date: bookingDate.toISOString() });
 	}
