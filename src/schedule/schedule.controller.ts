@@ -7,6 +7,8 @@ import {
 	HttpStatus,
 	Param,
 	Post,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { ScheduleService } from './schedule.service';
@@ -16,6 +18,7 @@ export class ScheduleController {
 	constructor(private readonly scheduleService: ScheduleService) {}
 
 	@Post('create')
+	@UsePipes(new ValidationPipe({ transform: true }))
 	async create(@Body() createScheduleDto: CreateScheduleDto) {
 		try {
 			return await this.scheduleService.create(createScheduleDto);
